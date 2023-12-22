@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Display</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        .searchContainer {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #searchInput {
+            padding: 8px;
+        }
+
+        .gameItem {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px;
+        }
+
+        .gameImage {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Games</h2>
+    <div class="searchContainer">
+        <input type="text" id="searchInput" placeholder="Search for games...">
+        <button onclick="searchGames()">Search</button>
+    </div>
+    <div id="gameList"></div>
+    <script>
+        function displayAllGames(data) {
+            const gameList = document.getElementById('gameList');
+            gameList.innerHTML = ''; // Clear previous results
+
+            if (data.length === 0) {
+                gameList.innerHTML = '<p>No results found.</p>';
+                return;
+            }
+
+            data.forEach(game => {
+                const gameItem = document.createElement('div');
+                gameItem.className = 'gameItem';
+
+                const title = document.createElement('h3');
+                title.textContent = game.title;
+
+                const content = document.createElement('p');
+                content.textContent = game.content;
+
+                if (game.image) {
+                    const image = document.createElement('img');
+                    image.className = 'gameImage';
+                    image.src = `data:${game.image.contentType};base64,${game.image.data.toString('base64')}`;
+                    image.alt = game.title;
+                    gameItem.appendChild(image);
+                }
+
+
+
+                const downloadLink = document.createElement('p');
+                downloadLink.innerHTML = `Download Link: <a href="${game.downloadLink}" target="_blank">${game.downloadLink}</a>`;
+
+                const detailsLink = document.createElement('a');
+                detailsLink.href = `/game?name=${encodeURIComponent(game.title)}`;
+                detailsLink.textContent = 'View Details';
+
+                // Add an event listener to reload the page when clicking on "View Details"
+                detailsLink.addEventListener('click', () => {
+                    location.reload();
+                });
+
+                gameItem.appendChild(title);
+                gameItem.appendChild(content);
+                gameItem.appendChild(downloadLink);
+                gameItem.appendChild(detailsLink);
+                gameList.appendChild(gameItem);
+            });
+        }
+
+        function searchGames() {
+            const keyword = document.getElementById('searchInput').value;
+
+            fetch(`/search-games`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ keyword }),
+            })
+                .then(response => response.json())
+                .then(displayAllGames)
+                .catch(error => console.error('Error searching game data:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load all games initially
+            fetch('/get-games')
+                .then(response => response.json())
+                .then(displayAllGames)
+                .catch(error => console.error('Error fetching game data:', error));
+        });
+    </script>
+</body>
+
+</html>
